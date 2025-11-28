@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -378,10 +377,13 @@ function handleLogin() {
 
 // Sửa lại hàm window.onload
 window.onload = function() {
-    // Kiểm tra đã đăng nhập chưa
     if (localStorage.getItem('isLoggedIn') === 'true') {
+        // Đã đăng nhập → ẩn màn hình login và vào app
         document.getElementById('loginScreen').style.display = 'none';
         initApp();
+    } else {
+        // Chưa đăng nhập → giữ nguyên màn hình login
+        document.getElementById('loginScreen').style.display = 'block';
     }
 };
 
@@ -548,8 +550,7 @@ window.onload = function() {
                 .subscribe();
         }
 
-        // Initialize app on load
-        window.onload = initApp;
+ 
     </script>
 </body>
 </html>
