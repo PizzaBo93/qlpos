@@ -107,8 +107,21 @@
             border-left: 4px solid #f59e0b;
         }
 
-        .revenue-card.total {
-            border-left: 4px solid #3b82f6;
+       .revenue-card.total {
+            border-left: 4px solid #10b981;
+            background: #059669;
+            color: white;
+            transform: scale(1.05);
+            box-shadow: 0 8px 24px rgba(5, 150, 105, 0.3);
+        }
+
+        .revenue-card.total h3 {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .revenue-card.total .revenue-amount {
+            color: white;
+            font-size: 36px;
         }
 
         .orders-section {
@@ -218,6 +231,33 @@
             margin-bottom: 20px;
         }
 
+                .logout-btn {
+            padding: 10px 20px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .logout-btn:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+
+        .logout-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+        }
+
         .login-screen {
     position: fixed;
     top: 0;
@@ -298,10 +338,13 @@
     </div>
 </div>
     <div class="container">
-        <div class="header">
-                <h1>🍕 Quản lý Đơn Pizza</h1>
-                <div class="store-selector" id="storeSelector"></div>
-            </div>
+       <div class="header">
+    <div class="header-left">
+        <h1>🍕 Quản lý Đơn Pizza</h1>
+        <div class="store-selector" id="storeSelector"></div>
+    </div>
+    <button class="logout-btn" onclick="handleLogout()">🚪 Đăng xuất</button>
+</div>
 
             <div class="revenue-cards">
                 <div class="revenue-card completed">
@@ -372,6 +415,13 @@ function handleLogin() {
         initApp();
     } else {
         errorDiv.textContent = 'Tên đăng nhập hoặc mật khẩu không đúng';
+    }
+}
+
+function handleLogout() {
+    if (confirm('Bạn có chắc muốn đăng xuất?')) {
+        localStorage.removeItem('isLoggedIn');
+        location.reload();
     }
 }
 
