@@ -620,10 +620,6 @@
         const SUPABASE_URL = 'https://mhmvtywqtaqikaubhhmf.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1obXZ0eXdxdGFxaWthdWJoaG1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMwNDA4MTMsImV4cCI6MjA3ODYxNjgxM30.VDRLH8sTCkoZfJes3VJfHJhXsaCla9PkM2WcPL5T0Ds';
 
-        const LOGIN_CREDENTIALS = {
-            username: 'bomap',
-            password: '91932125'
-        };
 
         const STORES = [
             { id: 'DH', name: 'DH' },
@@ -658,7 +654,7 @@
                 .subscribe();
         }
 
-        function handleLogin() {
+        async function handleLogin() {
             const username = document.getElementById('loginId').value.trim();
             const password = document.getElementById('loginPassword').value.trim();
             const errorDiv = document.getElementById('loginError');
@@ -668,12 +664,36 @@
                 return;
             }
 
-            if (username === LOGIN_CREDENTIALS.username && password === LOGIN_CREDENTIALS.password) {
+            try {
+                const { data, error } = await supabase
+                    .from('staff_users')
+                    .select('*')
+                    .eq('username', username)
+                    .eq('password_hash', password)
+                    .eq('role', 'admin')
+                    .eq('is_active', true)
+                    .single();
+
+                if (error || !data) {
+                    errorDiv.textContent = 'Tên đăng nhập hoặc mật khẩu không đúng';
+                    return;
+                }
+
                 localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('staffUser', JSON.stringify({
+                    id: data.id,
+                    username: data.username,
+                    full_name: data.full_name,
+                    role: data.role,
+                    store_code: data.store_code
+                }));
+                
                 document.getElementById('loginScreen').style.display = 'none';
                 initApp();
-            } else {
-                errorDiv.textContent = 'Tên đăng nhập hoặc mật khẩu không đúng';
+
+            } catch (error) {
+                errorDiv.textContent = 'Lỗi kết nối. Vui lòng thử lại';
+                console.error('Login error:', error);
             }
         }
 
@@ -685,6 +705,9 @@
         }
 
         window.onload = function() {
+            // Khởi tạo Supabase client ngay khi load trang
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            
             if (localStorage.getItem('isLoggedIn') === 'true') {
                 document.getElementById('loginScreen').style.display = 'none';
                 initApp();
@@ -693,7 +716,10 @@
 
         async function initApp() {
             try {
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                // Khởi tạo supabase nếu chưa có
+                if (!supabase) {
+                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                }
                 
                 const { data, error } = await supabase.from('orders').select('*').limit(1);
                 if (error) throw error;
