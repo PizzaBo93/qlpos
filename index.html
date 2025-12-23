@@ -635,7 +635,6 @@
             'grab': '🚗 Grab'
         };
 
-        let supabase;
         let orders = [];
         let currentMainTab = 'revenue';
         let currentRevenueStore = 'all';
@@ -715,12 +714,7 @@
         };
 
         async function initApp() {
-            try {
-                // Khởi tạo supabase nếu chưa có
-                if (!supabase) {
-                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                }
-                
+            try {   
                 const { data, error } = await supabase.from('orders').select('*').limit(1);
                 if (error) throw error;
 
