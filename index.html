@@ -75,14 +75,14 @@
         }
 
         .main-tab-btn:hover {
-            border-color: #ff6b35;
-            color: #ff6b35;
+            border-color: #3b82f6;
+            color: #3b82f6;
         }
 
         .main-tab-btn.active {
-            background: #ff6b35;
+            background:#3b82f6;
             color: white;
-            border-color: #ff6b35;
+            border-color: #3b82f6;
         }
 
         .tab-content {
@@ -127,15 +127,15 @@
             color: #333;
         }
 
-        .store-btn:hover {
-            border-color: #ff6b35;
-            background: #fff5f2;
+       .store-btn:hover {
+            border-color: #ef4444;   /* Red-500 */
+            background: #fee2e2;     /* Red-100 */
         }
 
         .store-btn.active {
-            background: #ff6b35;
+            background: #ef4444;     /* Red-500 */
             color: white;
-            border-color: #ff6b35;
+            border-color: #ef4444;
         }
 
         .revenue-cards {
@@ -512,6 +512,148 @@
                 flex-direction: column;
             }
         }
+
+        .date-filter {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #e5e5e5;
+}
+
+.date-input {
+    padding: 8px 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #333;
+}
+
+.date-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+}
+
+.report-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.report-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border-left: 4px solid #3b82f6;
+}
+
+.report-card h4 {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.report-card .value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.report-card.total {
+    border-left: 4px solid #10b981;
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    color: white;
+}
+
+.report-card.total h4 {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.report-card.total .value {
+    color: white;
+    font-size: 28px;
+}
+
+.chart-container {
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+
+.chart-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 20px;
+}
+
+.chart-canvas {
+    max-height: 400px;
+}
+
+.cash-register-report {
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    margin-top: 20px;
+}
+
+.cash-register-report h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: #1a1a1a;
+}
+
+.cash-register-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+}
+
+.cash-item {
+    padding: 12px;
+    background: #f9fafb;
+    border-radius: 8px;
+}
+
+.cash-item-label {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.cash-item-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+}
+
+.no-data-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.no-data-text {
+    font-size: 16px;
+    font-weight: 500;
+}
+
     </style>
 </head>
 <body>
@@ -544,13 +686,18 @@
         </div>
 
         <div class="main-tabs">
-            <button class="main-tab-btn active" onclick="switchMainTab('revenue')">
-                📊 Doanh thu
-            </button>
-            <button class="main-tab-btn" onclick="switchMainTab('orders')">
-                📦 Đơn hàng
-            </button>
-        </div>
+    <button class="main-tab-btn active" onclick="switchMainTab('revenue')">
+        📊 Doanh thu
+    </button>
+    <button class="main-tab-btn" onclick="switchMainTab('orders')">
+        📦 Đơn hàng
+    </button>
+    <button class="main-tab-btn" onclick="switchMainTab('reports')">
+        📈 Báo Cáo
+    </button>
+</div>
+
+
 
         <div class="tab-content active" id="revenueTab">
             <div class="store-selector">
@@ -614,8 +761,39 @@
                 <div id="ordersContent" class="loading">Đang tải dữ liệu...</div>
             </div>
         </div>
+
+        <div class="tab-content" id="reportsTab">
+    <div class="store-selector">
+        <div class="store-selector-label">Chọn quán</div>
+        <div class="store-buttons" id="reportsStoreSelector"></div>
     </div>
 
+    <div class="orders-filters">
+        <div class="filter-row">
+            <span class="filter-label">Chế độ xem:</span>
+            <button class="filter-btn active" onclick="setReportMode('single')">
+                📅 Ngày đơn lẻ
+            </button>
+            <button class="filter-btn" onclick="setReportMode('range')">
+                📆 Khoảng thời gian
+            </button>
+        </div>
+        <div class="date-filter">
+            <span class="filter-label">Chọn ngày:</span>
+            <input type="date" id="singleDate" class="date-input" onchange="loadReports()">
+            <div id="dateRangeInputs" style="display: none;">
+                <input type="date" id="startDate" class="date-input" onchange="loadReports()">
+                <span>đến</span>
+                <input type="date" id="endDate" class="date-input" onchange="loadReports()">
+            </div>
+        </div>
+    </div>
+
+    <div id="reportsContent" class="loading">Chọn ngày để xem báo cáo</div>
+</div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
         const SUPABASE_URL = 'https://mhmvtywqtaqikaubhhmf.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1obXZ0eXdxdGFxaWthdWJoaG1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMwNDA4MTMsImV4cCI6MjA3ODYxNjgxM30.VDRLH8sTCkoZfJes3VJfHJhXsaCla9PkM2WcPL5T0Ds';
@@ -642,6 +820,10 @@
         let currentOrderStatus = 'pending';
         let currentPaymentMethod = 'all';
         let orderToDelete = null;
+        let reports = [];
+        let currentReportsStore = 'all';
+        let currentReportMode = 'single';
+        let chartInstances = {};
 
         function setupRealtimeSubscription() {
             supabase
@@ -775,37 +957,62 @@
                             onclick="selectStore('orders', '${s.id}')">${s.name}</button>
                 `).join('')}
             `;
-            
+
+            const reportsSelector = document.getElementById('reportsStoreSelector');
+            const reportsHtml = `
+                <button class="store-btn ${currentReportsStore === 'all' ? 'active' : ''}" 
+                        onclick="selectStore('reports', 'all')">Tất cả</button>
+                ${STORES.map(s => `
+                    <button class="store-btn ${currentReportsStore === s.id ? 'active' : ''}" 
+                            onclick="selectStore('reports', '${s.id}')">${s.name}</button>
+                `).join('')}
+            `;
+            reportsSelector.innerHTML = reportsHtml;
             revenueSelector.innerHTML = html;
             ordersSelector.innerHTML = ordersHtml;
+
         }
 
-        function selectStore(tab, storeId) {
-            if (tab === 'revenue') {
-                currentRevenueStore = storeId;
-                updateRevenue();
-            } else {
-                currentOrdersStore = storeId;
-                renderOrders();
-            }
-            renderStoreSelectors();
-        }
+       function selectStore(tab, storeId) {
+    if (tab === 'revenue') {
+        currentRevenueStore = storeId;
+        updateRevenue();
 
-        function switchMainTab(tab) {
-            currentMainTab = tab;
-            
-            document.querySelectorAll('.main-tab-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-            
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            document.getElementById(tab + 'Tab').classList.add('active');
-            
-            if (tab === 'revenue') {
-                updateRevenue();
-            } else {
-                renderOrders();
-            }
-        }
+    } else if (tab === 'orders') {
+        currentOrdersStore = storeId;
+        renderOrders();
+
+    } else if (tab === 'reports') {
+        currentReportsStore = storeId;
+        loadReports();
+    }
+
+    renderStoreSelectors();
+}
+
+
+   function switchMainTab(tab) {
+    currentMainTab = tab;
+
+    document.querySelectorAll('.main-tab-btn')
+        .forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+
+    document.querySelectorAll('.tab-content')
+        .forEach(content => content.classList.remove('active'));
+    document.getElementById(tab + 'Tab').classList.add('active');
+
+    if (tab === 'revenue') {
+        updateRevenue();
+
+    } else if (tab === 'orders') {
+        renderOrders();
+
+    } else if (tab === 'reports') {
+        loadReports();
+    }
+}
+
 
         function setOrderStatus(status) {
             currentOrderStatus = status;
@@ -941,6 +1148,522 @@
                 currency: 'VND'
             }).format(amount);
         }
+
+        // Set default date
+const today = new Date().toISOString().split('T')[0];
+window.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('singleDate')) {
+        document.getElementById('singleDate').value = today;
+        document.getElementById('startDate').value = today;
+        document.getElementById('endDate').value = today;
+    }
+});
+
+function setReportMode(mode) {
+    currentReportMode = mode;
+    
+    document.querySelectorAll('.orders-filters .filter-row:first-child .filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    const singleDateInput = document.getElementById('singleDate');
+    const dateRangeInputs = document.getElementById('dateRangeInputs');
+    
+    if (mode === 'single') {
+        singleDateInput.style.display = 'inline-block';
+        dateRangeInputs.style.display = 'none';
+    } else {
+        singleDateInput.style.display = 'none';
+        dateRangeInputs.style.display = 'flex';
+        dateRangeInputs.style.gap = '8px';
+        dateRangeInputs.style.alignItems = 'center';
+    }
+    
+    loadReports();
+}
+
+async function loadReports() {
+    const container = document.getElementById('reportsContent');
+    container.innerHTML = '<div class="loading">Đang tải báo cáo...</div>';
+
+    try {
+        let query = supabase.from('daily_reports').select('*');
+
+        if (currentReportMode === 'single') {
+            const date = document.getElementById('singleDate').value;
+            if (!date) {
+                container.innerHTML = '<div class="loading">Vui lòng chọn ngày</div>';
+                return;
+            }
+            query = query.eq('report_date', date);
+        } else {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            if (!startDate || !endDate) {
+                container.innerHTML = '<div class="loading">Vui lòng chọn khoảng thời gian</div>';
+                return;
+            }
+            query = query.gte('report_date', startDate).lte('report_date', endDate);
+        }
+
+        if (currentReportsStore !== 'all') {
+            query = query.eq('store_code', currentReportsStore);
+        }
+
+        const { data, error } = await query.order('report_date', { ascending: true });
+
+        if (error) throw error;
+        
+        // PHẦN MỚI: Normalize JSON data ngay khi load
+        reports = (data || []).map(report => {
+            try {
+                return {
+                    ...report,
+                    revenue: typeof report.revenue === 'string' 
+                        ? JSON.parse(report.revenue.trim()) 
+                        : report.revenue,
+                    cash_register: typeof report.cash_register === 'string'
+                        ? JSON.parse(report.cash_register.trim())
+                        : report.cash_register
+                };
+            } catch (e) {
+                console.error('Error parsing report:', report.id, e);
+                return {
+                    ...report,
+                    revenue: { total: 0, cash: 0, transfer: 0, shopee: 0, grab: 0 },
+                    cash_register: { start: 0, current: 0, collected: 0, expenses: 0, other_income: 0 }
+                };
+            }
+        });
+        
+        if (reports.length === 0) {
+            container.innerHTML = `
+                <div class="no-data">
+                    <div class="no-data-icon">📊</div>
+                    <div class="no-data-text">Không có dữ liệu báo cáo cho khoảng thời gian này</div>
+                </div>
+            `;
+            return;
+        }
+
+        renderReports();
+    } catch (error) {
+        console.error('Full error:', error);
+        container.innerHTML = `<div class="error">Lỗi tải báo cáo: ${error.message}</div>`;
+    }
+}
+
+
+function renderReports() {
+    // Destroy old charts
+    Object.values(chartInstances).forEach(chart => chart.destroy());
+    chartInstances = {};
+
+    if (currentReportMode === 'single') {
+        renderSingleDayReport();
+    } else {
+        renderRangeReport();
+    }
+}
+
+function renderSingleDayReport() {
+    const container = document.getElementById('reportsContent');
+    
+     const totalRevenue = reports.reduce((sum, r) => {
+        return sum + (r.revenue?.total || 0);
+    }, 0);
+
+    const paymentBreakdown = {
+        cash: 0,
+        transfer: 0,
+        shopee: 0,
+        grab: 0
+    };
+
+    const storeRevenues = {};
+
+    reports.forEach(r => {
+        paymentBreakdown.cash += r.revenue?.cash || 0;
+        paymentBreakdown.transfer += r.revenue?.transfer || 0;
+        paymentBreakdown.shopee += r.revenue?.shopee || 0;
+        paymentBreakdown.grab += r.revenue?.grab || 0;
+        
+        storeRevenues[r.store_code] = r.revenue?.total || 0;
+    });
+
+    let html = `
+        <div class="report-summary">
+            <div class="report-card total">
+                <h4>💰 Tổng doanh thu</h4>
+                <div class="value">${formatMoney(totalRevenue)}</div>
+            </div>
+            <div class="report-card">
+                <h4>💵 Tiền mặt</h4>
+                <div class="value">${formatMoney(paymentBreakdown.cash)}</div>
+            </div>
+            <div class="report-card">
+                <h4>💳 Chuyển khoản</h4>
+                <div class="value">${formatMoney(paymentBreakdown.transfer)}</div>
+            </div>
+            <div class="report-card">
+                <h4>🛍️ Shopee</h4>
+                <div class="value">${formatMoney(paymentBreakdown.shopee)}</div>
+            </div>
+            <div class="report-card">
+                <h4>🚗 Grab</h4>
+                <div class="value">${formatMoney(paymentBreakdown.grab)}</div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-title">Biểu đồ doanh thu theo hình thức thanh toán</div>
+            <canvas id="paymentChart" class="chart-canvas"></canvas>
+        </div>
+    `;
+
+    // Bỏ try-catch, đơn giản hơn
+    if (currentReportsStore !== 'all' && reports.length === 1) {
+        const cashRegister = reports[0].cash_register;
+        html += `
+            <div class="cash-register-report">
+                <h3>💰 Báo cáo két tiền - ${currentReportsStore}</h3>
+                <div class="cash-register-grid">
+                    <div class="cash-item">
+                        <div class="cash-item-label">Tiền đầu ca</div>
+                        <div class="cash-item-value">${formatMoney(cashRegister?.start || 0)}</div>
+                    </div>
+                    <div class="cash-item">
+                        <div class="cash-item-label">Tiền hiện tại</div>
+                        <div class="cash-item-value">${formatMoney(cashRegister?.current || 0)}</div>
+                    </div>
+                    <div class="cash-item">
+                        <div class="cash-item-label">Đã thu</div>
+                        <div class="cash-item-value">${formatMoney(cashRegister?.collected || 0)}</div>
+                    </div>
+                    <div class="cash-item">
+                        <div class="cash-item-label">Chi phí</div>
+                        <div class="cash-item-value">${formatMoney(cashRegister?.expenses || 0)}</div>
+                    </div>
+                    <div class="cash-item">
+                        <div class="cash-item-label">Thu nhập khác</div>
+                        <div class="cash-item-value">${formatMoney(cashRegister?.other_income || 0)}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    if (currentReportsStore === 'all') {
+        html += '<div class="cash-register-report"><h3>💰 Báo cáo két tiền tất cả quán</h3>';
+        reports.forEach(r => {
+            const cashRegister = r.cash_register;
+            html += `
+                <h4 style="margin-top: 16px; margin-bottom: 12px;">${r.store_code}</h4>
+                <div class="cash-register-grid">
+                    <div class="cash-item">
+                        <div class="cash-item-label">Tiền đầu ca</div>
+                        <div class="cash-item-value">${formatMoney(cashRegister?.start || 0)}</div>
+                    </div>
+                    <div class="cash-item">
+                        <div class="cash-item-label">Tiền hiện tại</div>
+                        <div class="cash-item-value">${formatMoney(cashRegister?.current || 0)}</div>
+                    </div>
+                    <div class="cash-item">
+                        <div class="cash-item-label">Đã thu</div>
+                        <div class="cash-item-value">${formatMoney(cashRegister?.collected || 0)}</div>
+                    </div>
+                    <div class="cash-item">
+                        <div class="cash-item-label">Chi phí</div>
+                        <div class="cash-item-value">${formatMoney(cashRegister?.expenses || 0)}</div>
+                    </div>
+                    <div class="cash-item">
+                        <div class="cash-item-label">Thu nhập khác</div>
+                        <div class="cash-item-value">${formatMoney(cashRegister?.other_income || 0)}</div>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+    }
+
+    container.innerHTML = html;
+
+    const paymentCtx = document.getElementById('paymentChart').getContext('2d');
+    chartInstances.payment = new Chart(paymentCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['💵 Tiền mặt', '💳 Chuyển khoản', '🛍️ Shopee', '🚗 Grab'],
+            datasets: [{
+                data: [
+                    paymentBreakdown.cash,
+                    paymentBreakdown.transfer,
+                    paymentBreakdown.shopee,
+                    paymentBreakdown.grab
+                ],
+                backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.label + ': ' + formatMoney(context.parsed);
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    if (currentReportsStore === 'all' && reports.length > 1) {
+        const storeCtx = document.getElementById('storeChart').getContext('2d');
+        chartInstances.store = new Chart(storeCtx, {
+            type: 'pie',
+            data: {
+                labels: Object.keys(storeRevenues),
+                datasets: [{
+                    data: Object.values(storeRevenues),
+                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percent = ((context.parsed / total) * 100).toFixed(1);
+                                return context.label + ': ' + formatMoney(context.parsed) + ' (' + percent + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+function renderRangeReport() {
+    const container = document.getElementById('reportsContent');
+    
+    const dateGroups = {};
+    reports.forEach(r => {
+        if (!dateGroups[r.report_date]) {
+            dateGroups[r.report_date] = [];
+        }
+        dateGroups[r.report_date].push(r);
+    });
+
+    const dailyTotals = {};
+    const paymentBreakdown = {
+        cash: 0,
+        transfer: 0,
+        shopee: 0,
+        grab: 0
+    };
+
+   // Đơn giản hơn - không cần parse
+    Object.entries(dateGroups).forEach(([date, reps]) => {
+        dailyTotals[date] = reps.reduce((sum, r) => {
+            paymentBreakdown.cash += r.revenue?.cash || 0;
+            paymentBreakdown.transfer += r.revenue?.transfer || 0;
+            paymentBreakdown.shopee += r.revenue?.shopee || 0;
+            paymentBreakdown.grab += r.revenue?.grab || 0;
+            return sum + (r.revenue?.total || 0);
+        }, 0);
+    });
+
+
+    const totalRevenue = Object.values(dailyTotals).reduce((a, b) => a + b, 0);
+
+    let html = `
+        <div class="report-summary">
+            <div class="report-card total">
+                <h4>💰 Tổng doanh thu</h4>
+                <div class="value">${formatMoney(totalRevenue)}</div>
+            </div>
+            <div class="report-card">
+                <h4>💵 Tiền mặt</h4>
+                <div class="value">${formatMoney(paymentBreakdown.cash)}</div>
+            </div>
+            <div class="report-card">
+                <h4>💳 Chuyển khoản</h4>
+                <div class="value">${formatMoney(paymentBreakdown.transfer)}</div>
+            </div>
+            <div class="report-card">
+                <h4>🛍️ Shopee</h4>
+                <div class="value">${formatMoney(paymentBreakdown.shopee)}</div>
+            </div>
+            <div class="report-card">
+                <h4>🚗 Grab</h4>
+                <div class="value">${formatMoney(paymentBreakdown.grab)}</div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-title">Doanh thu theo thời gian</div>
+            <canvas id="timelineChart" class="chart-canvas"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-title">Biểu đồ doanh thu theo hình thức thanh toán</div>
+            <canvas id="paymentChart" class="chart-canvas"></canvas>
+        </div>
+    `;
+
+    if (currentReportsStore === 'all') {
+        const storeRevenues = {};
+        reports.forEach(r => {
+            const rev = JSON.parse(r.revenue);
+            if (!storeRevenues[r.store_code]) {
+                storeRevenues[r.store_code] = 0;
+            }
+            storeRevenues[r.store_code] += rev.total;
+        });
+
+        html += `
+            <div class="chart-container">
+                <div class="chart-title">Thị phần doanh thu theo quán</div>
+                <canvas id="storeChart" class="chart-canvas"></canvas>
+            </div>
+        `;
+    }
+
+    container.innerHTML = html;
+
+    const timelineCtx = document.getElementById('timelineChart').getContext('2d');
+    const sortedDates = Object.keys(dailyTotals).sort();
+    chartInstances.timeline = new Chart(timelineCtx, {
+        type: 'line',
+        data: {
+            labels: sortedDates.map(d => {
+                const date = new Date(d);
+                return `${date.getDate()}/${date.getMonth() + 1}`;
+            }),
+            datasets: [{
+                label: 'Doanh thu',
+                data: sortedDates.map(d => dailyTotals[d]),
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Doanh thu: ' + formatMoney(context.parsed.y);
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return (value / 1000000).toFixed(1) + 'tr';
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    const paymentCtx = document.getElementById('paymentChart').getContext('2d');
+    chartInstances.payment = new Chart(paymentCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['💵 Tiền mặt', '💳 Chuyển khoản', '🛍️ Shopee', '🚗 Grab'],
+            datasets: [{
+                data: [
+                    paymentBreakdown.cash,
+                    paymentBreakdown.transfer,
+                    paymentBreakdown.shopee,
+                    paymentBreakdown.grab
+                ],
+                backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.label + ': ' + formatMoney(context.parsed);
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    if (currentReportsStore === 'all') {
+        const storeRevenues = {};
+        reports.forEach(r => {
+            const rev = JSON.parse(r.revenue);
+            if (!storeRevenues[r.store_code]) {
+                storeRevenues[r.store_code] = 0;
+            }
+            storeRevenues[r.store_code] += rev.total;
+        });
+
+        const storeCtx = document.getElementById('storeChart').getContext('2d');
+        chartInstances.store = new Chart(storeCtx, {
+            type: 'pie',
+            data: {
+                labels: Object.keys(storeRevenues),
+                datasets: [{
+                    data: Object.values(storeRevenues),
+                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percent = ((context.parsed / total) * 100).toFixed(1);
+                                return context.label + ': ' + formatMoney(context.parsed) + ' (' + percent + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
     </script>
 </body>
 </html>
