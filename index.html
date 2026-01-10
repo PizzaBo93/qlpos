@@ -1322,32 +1322,51 @@ function renderSingleDayReport() {
         </div>
     `;
 
-    // Bỏ try-catch, đơn giản hơn
+// Hiển thị báo cáo két tiền từ cột cash_register
     if (currentReportsStore !== 'all' && reports.length === 1) {
-        const cashRegister = reports[0].cash_register;
+        const cashRegister = reports[0].cash_register || {};
+        const diff = cashRegister.difference || 0;
+        const diffClass = diff > 0 ? 'color: #10b981' : diff < 0 ? 'color: #ef4444' : 'color: #1a1a1a';
+        
         html += `
             <div class="cash-register-report">
                 <h3>💰 Báo cáo két tiền - ${currentReportsStore}</h3>
                 <div class="cash-register-grid">
                     <div class="cash-item">
-                        <div class="cash-item-label">Tiền đầu ca</div>
-                        <div class="cash-item-value">${formatMoney(cashRegister?.start || 0)}</div>
+                        <div class="cash-item-label">Tiền đầu ngày</div>
+                        <div class="cash-item-value">${formatMoney(cashRegister.start || 0)}</div>
                     </div>
                     <div class="cash-item">
-                        <div class="cash-item-label">Tiền hiện tại</div>
-                        <div class="cash-item-value">${formatMoney(cashRegister?.current || 0)}</div>
-                    </div>
-                    <div class="cash-item">
-                        <div class="cash-item-label">Đã thu</div>
-                        <div class="cash-item-value">${formatMoney(cashRegister?.collected || 0)}</div>
+                        <div class="cash-item-label">Doanh thu tiền mặt</div>
+                        <div class="cash-item-value">${formatMoney(cashRegister.collected || 0)}</div>
                     </div>
                     <div class="cash-item">
                         <div class="cash-item-label">Chi phí</div>
-                        <div class="cash-item-value">${formatMoney(cashRegister?.expenses || 0)}</div>
+                        <div class="cash-item-value" style="color: #ef4444">${formatMoney(cashRegister.expenses || 0)}</div>
                     </div>
                     <div class="cash-item">
                         <div class="cash-item-label">Thu nhập khác</div>
-                        <div class="cash-item-value">${formatMoney(cashRegister?.other_income || 0)}</div>
+                        <div class="cash-item-value" style="color: #10b981">${formatMoney(cashRegister.other_income || 0)}</div>
+                    </div>
+                    <div class="cash-item">
+                        <div class="cash-item-label">Tiền két lý thuyết</div>
+                        <div class="cash-item-value">${formatMoney(cashRegister.expected || 0)}</div>
+                    </div>
+                    <div class="cash-item">
+                        <div class="cash-item-label">Tiền két thực tế</div>
+                        <div class="cash-item-value">${formatMoney(cashRegister.actual || 0)}</div>
+                    </div>
+                    <div class="cash-item">
+                        <div class="cash-item-label">Chênh lệch</div>
+                        <div class="cash-item-value" style="${diffClass}">${formatMoney(diff)}</div>
+                    </div>
+                    <div class="cash-item">
+                        <div class="cash-item-label">Đã thu về</div>
+                        <div class="cash-item-value" style="color: #10b981">${formatMoney(cashRegister.received || 0)}</div>
+                    </div>
+                    <div class="cash-item">
+                        <div class="cash-item-label">Tiền để lại két</div>
+                        <div class="cash-item-value">${formatMoney(cashRegister.keep_in_drawer || 0)}</div>
                     </div>
                 </div>
             </div>
@@ -1357,29 +1376,48 @@ function renderSingleDayReport() {
     if (currentReportsStore === 'all') {
         html += '<div class="cash-register-report"><h3>💰 Báo cáo két tiền tất cả quán</h3>';
         reports.forEach(r => {
-            const cashRegister = r.cash_register;
+            const cashRegister = r.cash_register || {};
+            const diff = cashRegister.difference || 0;
+            const diffClass = diff > 0 ? 'color: #10b981' : diff < 0 ? 'color: #ef4444' : 'color: #1a1a1a';
+            
             html += `
                 <h4 style="margin-top: 16px; margin-bottom: 12px;">${r.store_code}</h4>
                 <div class="cash-register-grid">
                     <div class="cash-item">
-                        <div class="cash-item-label">Tiền đầu ca</div>
-                        <div class="cash-item-value">${formatMoney(cashRegister?.start || 0)}</div>
+                        <div class="cash-item-label">Tiền đầu ngày</div>
+                        <div class="cash-item-value">${formatMoney(cashRegister.start || 0)}</div>
                     </div>
                     <div class="cash-item">
-                        <div class="cash-item-label">Tiền hiện tại</div>
-                        <div class="cash-item-value">${formatMoney(cashRegister?.current || 0)}</div>
-                    </div>
-                    <div class="cash-item">
-                        <div class="cash-item-label">Đã thu</div>
-                        <div class="cash-item-value">${formatMoney(cashRegister?.collected || 0)}</div>
+                        <div class="cash-item-label">Doanh thu tiền mặt</div>
+                        <div class="cash-item-value">${formatMoney(cashRegister.collected || 0)}</div>
                     </div>
                     <div class="cash-item">
                         <div class="cash-item-label">Chi phí</div>
-                        <div class="cash-item-value">${formatMoney(cashRegister?.expenses || 0)}</div>
+                        <div class="cash-item-value" style="color: #ef4444">${formatMoney(cashRegister.expenses || 0)}</div>
                     </div>
                     <div class="cash-item">
                         <div class="cash-item-label">Thu nhập khác</div>
-                        <div class="cash-item-value">${formatMoney(cashRegister?.other_income || 0)}</div>
+                        <div class="cash-item-value" style="color: #10b981">${formatMoney(cashRegister.other_income || 0)}</div>
+                    </div>
+                    <div class="cash-item">
+                        <div class="cash-item-label">Tiền két lý thuyết</div>
+                        <div class="cash-item-value">${formatMoney(cashRegister.expected || 0)}</div>
+                    </div>
+                    <div class="cash-item">
+                        <div class="cash-item-label">Tiền két thực tế</div>
+                        <div class="cash-item-value">${formatMoney(cashRegister.actual || 0)}</div>
+                    </div>
+                    <div class="cash-item">
+                        <div class="cash-item-label">Chênh lệch</div>
+                        <div class="cash-item-value" style="${diffClass}">${formatMoney(diff)}</div>
+                    </div>
+                    <div class="cash-item">
+                        <div class="cash-item-label">Đã thu về</div>
+                        <div class="cash-item-value" style="color: #10b981">${formatMoney(cashRegister.received || 0)}</div>
+                    </div>
+                    <div class="cash-item">
+                        <div class="cash-item-label">Tiền để lại két</div>
+                        <div class="cash-item-value">${formatMoney(cashRegister.keep_in_drawer || 0)}</div>
                     </div>
                 </div>
             `;
