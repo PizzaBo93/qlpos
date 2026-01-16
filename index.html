@@ -654,6 +654,86 @@
     font-weight: 500;
 }
 
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.order-detail-items {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.detail-item {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid #f5f5f5;
+    align-items: center;
+}
+
+.item-name {
+    font-weight: 500;
+    color: #1a1a1a;
+}
+
+.item-qty {
+    color: #666;
+    font-size: 14px;
+    min-width: 40px;
+    text-align: center;
+}
+
+.item-price {
+    font-weight: 600;
+    color: #ff6b35;
+    min-width: 100px;
+    text-align: right;
+}
+
+.detail-summary {
+    display: flex;
+    justify-content: space-between;
+    font-size: 18px;
+    font-weight: 700;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 2px solid #e5e5e5;
+    color: #1a1a1a;
+}
+
+.detail-summary .total-amount {
+    color: #059669;
+}
+
+.detail-info {
+    background: #f9fafb;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.detail-info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 14px;
+}
+
+.detail-info-label {
+    color: #666;
+}
+
+.detail-info-value {
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
     </style>
 </head>
 <body>
@@ -678,6 +758,16 @@
             </div>
         </div>
     </div>
+
+    <div class="modal" id="orderDetailModal">
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3>🍕 Chi tiết đơn <span id="detailOrderId"></span></h3>
+            <button class="modal-btn cancel" onclick="closeOrderDetail()" style="margin: 0;">Đóng</button>
+        </div>
+        <div id="orderDetailContent"></div>
+    </div>
+</div>
 
     <div class="container">
         <div class="header">
@@ -735,6 +825,9 @@
                     </button>
                     <button class="filter-btn" onclick="setOrderStatus('paid')">
                         ✓ Đã thanh toán
+                    </button>
+                    <button class="filter-btn" onclick="setOrderStatus('deleted_items')">
+                        🗑️ Món đã xóa
                     </button>
                 </div>
                 <div class="filter-row payment-filters" id="paymentFilters" style="display: none;">
@@ -824,6 +917,7 @@
         let currentReportsStore = 'all';
         let currentReportMode = 'single';
         let chartInstances = {};
+        let menuItems = {};
 
         function setupRealtimeSubscription() {
             supabase
@@ -895,21 +989,40 @@
             }
         };
 
-        async function initApp() {
-            try {   
-                const { data, error } = await supabase.from('orders').select('*').limit(1);
-                if (error) throw error;
+       async function initApp() {
+    try {   
+        const { data, error } = await supabase.from('orders').select('*').limit(1);
+        if (error) throw error;
 
-                renderStoreSelectors();
-                await loadData();
-                setupRealtimeSubscription();
-                
-                setInterval(loadData, 30000);
-            } catch (error) {
-                document.getElementById('ordersContent').innerHTML = 
-                    `<div class="error">Lỗi kết nối Supabase: ${error.message}</div>`;
-            }
-        }
+        renderStoreSelectors();
+        await loadMenuData();  // ← THÊM DÒNG NÀY
+        await loadData();
+        setupRealtimeSubscription();
+        
+        setInterval(loadData, 30000);
+    } catch (error) {
+        document.getElementById('ordersContent').innerHTML = 
+            `<div class="error">Lỗi kết nối Supabase: ${error.message}</div>`;
+    }
+}
+
+async function loadMenuData() {
+    try {
+        const { data, error } = await supabase
+            .from('menu')
+            .select('*');
+        
+        if (error) throw error;
+        
+        // Convert array thành object để lookup nhanh
+        menuItems = (data || []).reduce((acc, item) => {
+            acc[item.id] = item;
+            return acc;
+        }, {});
+    } catch (error) {
+        console.error('Error loading menu:', error);
+    }
+}
 
         async function loadData() {
             try {
@@ -1015,23 +1128,24 @@
 
 
         function setOrderStatus(status) {
-            currentOrderStatus = status;
-            
-            document.querySelectorAll('.orders-filters .filter-row:first-child .filter-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            
-            const paymentFilters = document.getElementById('paymentFilters');
-            if (status === 'paid') {
-                paymentFilters.style.display = 'flex';
-            } else {
-                paymentFilters.style.display = 'none';
-                currentPaymentMethod = 'all';
-            }
-            
-            renderOrders();
-        }
+    currentOrderStatus = status;
+    
+    document.querySelectorAll('.orders-filters .filter-row:first-child .filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    const paymentFilters = document.getElementById('paymentFilters');
+    // Chỉ hiện payment filters khi ở tab "Đã thanh toán"
+    if (status === 'paid') {
+        paymentFilters.style.display = 'flex';
+    } else {
+        paymentFilters.style.display = 'none';
+        currentPaymentMethod = 'all';
+    }
+    
+    renderOrders();
+}
 
         function setPaymentMethod(method) {
             currentPaymentMethod = method;
@@ -1065,53 +1179,195 @@
         }
 
         function renderOrders() {
-            const container = document.getElementById('ordersContent');
+    const container = document.getElementById('ordersContent');
+    
+    let filteredOrders = orders;
+    
+    // Lọc theo quán
+    if (currentOrdersStore !== 'all') {
+        filteredOrders = filteredOrders.filter(o => o.store_code === currentOrdersStore);
+    }
+    
+    // Lọc theo trạng thái
+    if (currentOrderStatus === 'deleted_items') {
+        // Chỉ lấy đơn có deleted_items không rỗng
+        filteredOrders = filteredOrders.filter(o => {
+            if (!o.deleted_items) return false;
             
-            let filteredOrders = orders;
+            // Kiểm tra deleted_items có dữ liệu không
+            const deletedItems = (typeof o.deleted_items === 'string') 
+                ? JSON.parse(o.deleted_items) 
+                : (o.deleted_items || {});
             
-            if (currentOrdersStore !== 'all') {
-                filteredOrders = filteredOrders.filter(o => o.store_code === currentOrdersStore);
-            }
-            
-            filteredOrders = filteredOrders.filter(o => o.status === currentOrderStatus);
-            
-            if (currentOrderStatus === 'paid' && currentPaymentMethod !== 'all') {
-                filteredOrders = filteredOrders.filter(o => o.payment_method === currentPaymentMethod);
-            }
+            return Object.keys(deletedItems).length > 0;
+        });
+    } else {
+        // Logic cũ cho pending/paid
+        filteredOrders = filteredOrders.filter(o => o.status === currentOrderStatus);
+        
+        if (currentOrderStatus === 'paid' && currentPaymentMethod !== 'all') {
+            filteredOrders = filteredOrders.filter(o => o.payment_method === currentPaymentMethod);
+        }
+    }
 
-            if (filteredOrders.length === 0) {
-                container.innerHTML = '<div class="loading">Không có đơn hàng</div>';
-                return;
-            }
+    if (filteredOrders.length === 0) {
+        container.innerHTML = '<div class="loading">Không có đơn hàng</div>';
+        return;
+    }
 
-            container.innerHTML = `
-                <div class="orders-grid">
-                    ${filteredOrders.map(order => {
-                        const isCompact = currentOrderStatus === 'paid';
-                        return `
-                        <div class="order-card ${isCompact ? 'compact' : ''}">
-                            <div class="order-header">
-                                <div class="order-id">#${order.id}</div>
-                                ${currentOrderStatus === 'paid' ? 
-                                    `<button class="delete-btn" onclick="openDeleteModal(${order.id})">✕</button>` 
-                                    : ''}
-                            </div>
-                            <div class="order-info">
-                                <span class="order-store">${order.store_code}</span>
-                                <div class="order-payment">${PAYMENT_METHODS[order.payment_method] || order.payment_method}</div>
-                                ${isCompact ? 
-                                    `<div class="order-amount">${formatMoney(order.total)}</div>` :
-                                    `<div class="order-time">🕐 ${new Date(order.created_at).toLocaleTimeString('vi-VN', {hour: '2-digit', minute: '2-digit'})}</div>
-                                    ${order.note ? `<div style="color: #999; font-size: 13px;">📝 ${order.note}</div>` : ''}`
-                                }
-                            </div>
-                            ${!isCompact ? `<div class="order-amount">${formatMoney(order.total)}</div>` : ''}
-                        </div>
-                        `;
-                    }).join('')}
+    container.innerHTML = `
+        <div class="orders-grid">
+            ${filteredOrders.map(order => renderOrderCard(order)).join('')}
+        </div>
+    `;
+}
+
+function renderOrderCard(order) {
+    const isCompact = currentOrderStatus === 'paid';
+    const isDeletedView = currentOrderStatus === 'deleted_items';
+    
+    // Nếu đang xem tab "Món đã xóa"
+    if (isDeletedView) {
+        const deletedItems = (typeof order.deleted_items === 'string') 
+            ? JSON.parse(order.deleted_items) 
+            : (order.deleted_items || {});
+        
+        const deletedCount = Object.keys(deletedItems).length;
+        const deletedTotal = Object.entries(deletedItems).reduce((sum, [menuId, qty]) => {
+            const menuItem = menuItems[menuId];
+            if (menuItem) {
+                const price = (order.store_code === 'PY' && menuItem.price_py) 
+                    ? menuItem.price_py 
+                    : menuItem.price;
+                return sum + (price * qty);
+            }
+            return sum;
+        }, 0);
+        
+        return `
+            <div class="order-card" onclick="openDeletedItemsDetail(${order.id})" style="cursor: pointer; border-left: 4px solid #ef4444;">
+                <div class="order-header">
+                    <div class="order-id">#${order.id}</div>
+                </div>
+                <div class="order-info">
+                    <span class="order-store">${order.store_code}</span>
+                    <div style="color: #ef4444; font-weight: 600;">🗑️ ${deletedCount} món đã xóa</div>
+                    <div class="order-time">🕐 ${new Date(order.created_at).toLocaleTimeString('vi-VN', {hour: '2-digit', minute: '2-digit'})}</div>
+                </div>
+                <div class="order-amount" style="color: #ef4444;">-${formatMoney(deletedTotal)}</div>
+            </div>
+        `;
+    }
+    
+    // Logic cũ cho pending/paid
+    return `
+        <div class="order-card ${isCompact ? 'compact' : ''}" 
+             onclick="openOrderDetail(${order.id})" 
+             style="cursor: pointer;">
+            <div class="order-header">
+                <div class="order-id">#${order.id}</div>
+                ${currentOrderStatus === 'paid' ? 
+                    `<button class="delete-btn" onclick="event.stopPropagation(); openDeleteModal(${order.id})">✕</button>` 
+                    : ''}
+            </div>
+            <div class="order-info">
+                <span class="order-store">${order.store_code}</span>
+                <div class="order-payment">${PAYMENT_METHODS[order.payment_method] || order.payment_method}</div>
+                ${isCompact ? 
+                    `<div class="order-amount">${formatMoney(order.total)}</div>` :
+                    `<div class="order-time">🕐 ${new Date(order.created_at).toLocaleTimeString('vi-VN', {hour: '2-digit', minute: '2-digit'})}</div>
+                    ${order.note ? `<div style="color: #999; font-size: 13px;">📝 ${order.note}</div>` : ''}`
+                }
+            </div>
+            ${!isCompact ? `<div class="order-amount">${formatMoney(order.total)}</div>` : ''}
+        </div>
+    `;
+}
+
+function openDeletedItemsDetail(orderId) {
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return;
+    
+    // Parse deleted_items
+    const deletedItems = (typeof order.deleted_items === 'string') 
+        ? JSON.parse(order.deleted_items) 
+        : (order.deleted_items || {});
+    
+    // Build items HTML
+    let itemsHtml = '';
+    let deletedTotal = 0;
+    
+    Object.entries(deletedItems).forEach(([menuId, quantity]) => {
+        const menuItem = menuItems[menuId];
+        if (menuItem) {
+            const price = (order.store_code === 'PY' && menuItem.price_py) 
+                ? menuItem.price_py 
+                : menuItem.price;
+            
+            const itemTotal = price * quantity;
+            deletedTotal += itemTotal;
+            
+            itemsHtml += `
+                <div class="detail-item">
+                    <span class="item-name">${menuItem.name}</span>
+                    <span class="item-qty">×${quantity}</span>
+                    <span class="item-price" style="color: #ef4444;">-${formatMoney(itemTotal)}</span>
+                </div>
+            `;
+        } else {
+            itemsHtml += `
+                <div class="detail-item">
+                    <span class="item-name" style="color: #999;">
+                        Món không xác định (${menuId})
+                    </span>
+                    <span class="item-qty">×${quantity}</span>
+                    <span class="item-price">-</span>
                 </div>
             `;
         }
+    });
+    
+    if (Object.keys(deletedItems).length === 0) {
+        itemsHtml = '<div style="text-align: center; color: #999; padding: 20px;">Không có món bị xóa</div>';
+    }
+    
+    const orderTime = new Date(order.created_at).toLocaleString('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    
+    document.getElementById('detailOrderId').textContent = '#' + orderId;
+    document.getElementById('orderDetailContent').innerHTML = `
+        <div class="detail-info" style="background: #fef2f2; border-left: 4px solid #ef4444;">
+            <div class="detail-info-row">
+                <span class="detail-info-label">🏪 Quán:</span>
+                <span class="detail-info-value">${order.store_code}</span>
+            </div>
+            <div class="detail-info-row">
+                <span class="detail-info-label">🕐 Thời gian xóa:</span>
+                <span class="detail-info-value">${orderTime}</span>
+            </div>
+            <div class="detail-info-row">
+                <span class="detail-info-label">⚠️ Lý do:</span>
+                <span class="detail-info-value" style="color: #ef4444;">Món đã bị xóa khỏi đơn</span>
+            </div>
+        </div>
+        
+        <div class="order-detail-items">
+            ${itemsHtml}
+        </div>
+        
+        <div class="detail-summary">
+            <span>Tổng giá trị đã xóa:</span>
+            <span class="total-amount" style="color: #ef4444;">-${formatMoney(deletedTotal)}</span>
+        </div>
+    `;
+    
+    document.getElementById('orderDetailModal').classList.add('active');
+}
 
         function openDeleteModal(orderId) {
             orderToDelete = orderId;
@@ -1269,229 +1525,160 @@ function renderReports() {
 
 function renderSingleDayReport() {
     const container = document.getElementById('reportsContent');
-    
-     const totalRevenue = reports.reduce((sum, r) => {
-        return sum + (r.revenue?.total || 0);
-    }, 0);
+    if (!container) return;
 
-    const paymentBreakdown = {
-        cash: 0,
-        transfer: 0,
-        shopee: 0,
-        grab: 0
+    if (!reports || reports.length === 0) {
+        container.innerHTML = '<p style="padding:16px">Không có dữ liệu báo cáo</p>';
+        return;
+    }
+
+    // ====== TÍNH TOÁN ======
+    const paymentBreakdown = { cash: 0, transfer: 0, shopee: 0, grab: 0 };
+    const storeRevenues = {};
+    let totalRevenue = 0;
+
+    // Gộp két tiền
+    const cashRegisterTotal = {
+        start: 0,
+        collected: 0,
+        expenses: 0,
+        other_income: 0,
+        expected: 0,
+        actual: 0,
+        received: 0,
+        keep_in_drawer: 0
     };
 
-    const storeRevenues = {};
-
     reports.forEach(r => {
-        paymentBreakdown.cash += r.revenue?.cash || 0;
-        paymentBreakdown.transfer += r.revenue?.transfer || 0;
-        paymentBreakdown.shopee += r.revenue?.shopee || 0;
-        paymentBreakdown.grab += r.revenue?.grab || 0;
-        
-        storeRevenues[r.store_code] = r.revenue?.total || 0;
+        const rev = r.revenue || {};
+        const c = r.cash_register || {};
+
+        paymentBreakdown.cash += rev.cash || 0;
+        paymentBreakdown.transfer += rev.transfer || 0;
+        paymentBreakdown.shopee += rev.shopee || 0;
+        paymentBreakdown.grab += rev.grab || 0;
+
+        storeRevenues[r.store_code] = rev.total || 0;
+        totalRevenue += rev.total || 0;
+
+        cashRegisterTotal.start += c.start || 0;
+        cashRegisterTotal.collected += c.collected || 0;
+        cashRegisterTotal.expenses += c.expenses || 0;
+        cashRegisterTotal.other_income += c.other_income || 0;
+        cashRegisterTotal.actual += c.actual || 0;
+        cashRegisterTotal.received += c.received || 0;
+        cashRegisterTotal.keep_in_drawer += c.keep_in_drawer || 0;
     });
 
-    let html = `
+    cashRegisterTotal.expected =
+        cashRegisterTotal.start +
+        cashRegisterTotal.collected +
+        cashRegisterTotal.other_income -
+        cashRegisterTotal.expenses;
+
+    const diff =
+        cashRegisterTotal.actual - cashRegisterTotal.expected;
+
+    // ====== HTML ======
+    container.innerHTML = `
         <div class="report-summary">
-            <div class="report-card total">
-                <h4>💰 Tổng doanh thu</h4>
-                <div class="value">${formatMoney(totalRevenue)}</div>
-            </div>
-            <div class="report-card">
-                <h4>💵 Tiền mặt</h4>
-                <div class="value">${formatMoney(paymentBreakdown.cash)}</div>
-            </div>
-            <div class="report-card">
-                <h4>💳 Chuyển khoản</h4>
-                <div class="value">${formatMoney(paymentBreakdown.transfer)}</div>
-            </div>
-            <div class="report-card">
-                <h4>🛍️ Shopee</h4>
-                <div class="value">${formatMoney(paymentBreakdown.shopee)}</div>
-            </div>
-            <div class="report-card">
-                <h4>🚗 Grab</h4>
-                <div class="value">${formatMoney(paymentBreakdown.grab)}</div>
-            </div>
+            ${summaryCard('💰 Tổng doanh thu', totalRevenue, 'total')}
+            ${summaryCard('💵 Tiền mặt', paymentBreakdown.cash)}
+            ${summaryCard('💳 Chuyển khoản', paymentBreakdown.transfer)}
+            ${summaryCard('🛍️ Shopee', paymentBreakdown.shopee)}
+            ${summaryCard('🚗 Grab', paymentBreakdown.grab)}
         </div>
 
         <div class="chart-container">
-            <div class="chart-title">Biểu đồ doanh thu theo hình thức thanh toán</div>
+            <div class="chart-title">Doanh thu theo hình thức thanh toán</div>
             <canvas id="paymentChart" class="chart-canvas"></canvas>
+        </div>
+
+        <div class="cash-register-report">
+            <h3>💰 Báo cáo két tiền (TỔNG)</h3>
+            <div class="cash-register-grid">
+                ${cashItem('Tiền đầu ngày', cashRegisterTotal.start)}
+                ${cashItem('Doanh thu tiền mặt', cashRegisterTotal.collected)}
+                ${cashItem('Chi phí', cashRegisterTotal.expenses, '#ef4444')}
+                ${cashItem('Thu nhập khác', cashRegisterTotal.other_income, '#10b981')}
+                ${cashItem('Tiền két lý thuyết', cashRegisterTotal.expected)}
+                ${cashItem('Tiền két thực tế', cashRegisterTotal.actual)}
+                ${cashItem('Chênh lệch', diff, diff > 0 ? '#10b981' : diff < 0 ? '#ef4444' : '#1a1a1a')}
+                ${cashItem('Đã thu về', cashRegisterTotal.received, '#10b981')}
+                ${cashItem('Tiền để lại két', cashRegisterTotal.keep_in_drawer)}
+            </div>
         </div>
     `;
 
-// Hiển thị báo cáo két tiền từ cột cash_register
-    if (currentReportsStore !== 'all' && reports.length === 1) {
-        const cashRegister = reports[0].cash_register || {};
-        const diff = cashRegister.difference || 0;
-        const diffClass = diff > 0 ? 'color: #10b981' : diff < 0 ? 'color: #ef4444' : 'color: #1a1a1a';
-        
-        html += `
-            <div class="cash-register-report">
-                <h3>💰 Báo cáo két tiền - ${currentReportsStore}</h3>
-                <div class="cash-register-grid">
-                    <div class="cash-item">
-                        <div class="cash-item-label">Tiền đầu ngày</div>
-                        <div class="cash-item-value">${formatMoney(cashRegister.start || 0)}</div>
-                    </div>
-                    <div class="cash-item">
-                        <div class="cash-item-label">Doanh thu tiền mặt</div>
-                        <div class="cash-item-value">${formatMoney(cashRegister.collected || 0)}</div>
-                    </div>
-                    <div class="cash-item">
-                        <div class="cash-item-label">Chi phí</div>
-                        <div class="cash-item-value" style="color: #ef4444">${formatMoney(cashRegister.expenses || 0)}</div>
-                    </div>
-                    <div class="cash-item">
-                        <div class="cash-item-label">Thu nhập khác</div>
-                        <div class="cash-item-value" style="color: #10b981">${formatMoney(cashRegister.other_income || 0)}</div>
-                    </div>
-                    <div class="cash-item">
-                        <div class="cash-item-label">Tiền két lý thuyết</div>
-                        <div class="cash-item-value">${formatMoney(cashRegister.expected || 0)}</div>
-                    </div>
-                    <div class="cash-item">
-                        <div class="cash-item-label">Tiền két thực tế</div>
-                        <div class="cash-item-value">${formatMoney(cashRegister.actual || 0)}</div>
-                    </div>
-                    <div class="cash-item">
-                        <div class="cash-item-label">Chênh lệch</div>
-                        <div class="cash-item-value" style="${diffClass}">${formatMoney(diff)}</div>
-                    </div>
-                    <div class="cash-item">
-                        <div class="cash-item-label">Đã thu về</div>
-                        <div class="cash-item-value" style="color: #10b981">${formatMoney(cashRegister.received || 0)}</div>
-                    </div>
-                    <div class="cash-item">
-                        <div class="cash-item-label">Tiền để lại két</div>
-                        <div class="cash-item-value">${formatMoney(cashRegister.keep_in_drawer || 0)}</div>
-                    </div>
-                </div>
+    // ====== CHART ======
+    renderPaymentChart(paymentBreakdown);
+}
+
+function summaryCard(title, value, extraClass = '') {
+    return `
+        <div class="report-card ${extraClass}">
+            <h4>${title}</h4>
+            <div class="value">${formatMoney(value)}</div>
+        </div>
+    `;
+}
+
+function cashItem(label, value = 0, color = '#1a1a1a') {
+    return `
+        <div class="cash-item">
+            <div class="cash-item-label">${label}</div>
+            <div class="cash-item-value" style="color:${color}">
+                ${formatMoney(value)}
             </div>
-        `;
-    }
+        </div>
+    `;
+}
 
-    if (currentReportsStore === 'all') {
-        html += '<div class="cash-register-report"><h3>💰 Báo cáo két tiền tất cả quán</h3>';
-        reports.forEach(r => {
-            const cashRegister = r.cash_register || {};
-            const diff = cashRegister.difference || 0;
-            const diffClass = diff > 0 ? 'color: #10b981' : diff < 0 ? 'color: #ef4444' : 'color: #1a1a1a';
-            
-            html += `
-                <h4 style="margin-top: 16px; margin-bottom: 12px;">${r.store_code}</h4>
-                <div class="cash-register-grid">
-                    <div class="cash-item">
-                        <div class="cash-item-label">Tiền đầu ngày</div>
-                        <div class="cash-item-value">${formatMoney(cashRegister.start || 0)}</div>
-                    </div>
-                    <div class="cash-item">
-                        <div class="cash-item-label">Doanh thu tiền mặt</div>
-                        <div class="cash-item-value">${formatMoney(cashRegister.collected || 0)}</div>
-                    </div>
-                    <div class="cash-item">
-                        <div class="cash-item-label">Chi phí</div>
-                        <div class="cash-item-value" style="color: #ef4444">${formatMoney(cashRegister.expenses || 0)}</div>
-                    </div>
-                    <div class="cash-item">
-                        <div class="cash-item-label">Thu nhập khác</div>
-                        <div class="cash-item-value" style="color: #10b981">${formatMoney(cashRegister.other_income || 0)}</div>
-                    </div>
-                    <div class="cash-item">
-                        <div class="cash-item-label">Tiền két lý thuyết</div>
-                        <div class="cash-item-value">${formatMoney(cashRegister.expected || 0)}</div>
-                    </div>
-                    <div class="cash-item">
-                        <div class="cash-item-label">Tiền két thực tế</div>
-                        <div class="cash-item-value">${formatMoney(cashRegister.actual || 0)}</div>
-                    </div>
-                    <div class="cash-item">
-                        <div class="cash-item-label">Chênh lệch</div>
-                        <div class="cash-item-value" style="${diffClass}">${formatMoney(diff)}</div>
-                    </div>
-                    <div class="cash-item">
-                        <div class="cash-item-label">Đã thu về</div>
-                        <div class="cash-item-value" style="color: #10b981">${formatMoney(cashRegister.received || 0)}</div>
-                    </div>
-                    <div class="cash-item">
-                        <div class="cash-item-label">Tiền để lại két</div>
-                        <div class="cash-item-value">${formatMoney(cashRegister.keep_in_drawer || 0)}</div>
-                    </div>
-                </div>
-            `;
-        });
-        html += '</div>';
-    }
+function renderPaymentChart(data) {
+    const canvas = document.getElementById('paymentChart');
+    if (!canvas) return;
 
-    container.innerHTML = html;
+    if (chartInstances.payment) chartInstances.payment.destroy();
 
-    const paymentCtx = document.getElementById('paymentChart').getContext('2d');
-    chartInstances.payment = new Chart(paymentCtx, {
+    chartInstances.payment = new Chart(canvas.getContext('2d'), {
         type: 'doughnut',
         data: {
             labels: ['💵 Tiền mặt', '💳 Chuyển khoản', '🛍️ Shopee', '🚗 Grab'],
             datasets: [{
-                data: [
-                    paymentBreakdown.cash,
-                    paymentBreakdown.transfer,
-                    paymentBreakdown.shopee,
-                    paymentBreakdown.grab
-                ],
+                data: [data.cash, data.transfer, data.shopee, data.grab],
                 backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444']
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return context.label + ': ' + formatMoney(context.parsed);
-                        }
-                    }
-                }
-            }
+            plugins: { legend: { position: 'bottom' } }
         }
     });
-
-    if (currentReportsStore === 'all' && reports.length > 1) {
-        const storeCtx = document.getElementById('storeChart').getContext('2d');
-        chartInstances.store = new Chart(storeCtx, {
-            type: 'pie',
-            data: {
-                labels: Object.keys(storeRevenues),
-                datasets: [{
-                    data: Object.values(storeRevenues),
-                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444']
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percent = ((context.parsed / total) * 100).toFixed(1);
-                                return context.label + ': ' + formatMoney(context.parsed) + ' (' + percent + '%)';
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
 }
+
+function renderStoreChart(storeRevenues) {
+    const canvas = document.getElementById('storeChart');
+    if (!canvas) return;
+
+    if (chartInstances.store) chartInstances.store.destroy();
+
+    chartInstances.store = new Chart(canvas.getContext('2d'), {
+        type: 'pie',
+        data: {
+            labels: Object.keys(storeRevenues),
+            datasets: [{
+                data: Object.values(storeRevenues),
+                backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+}
+
+
 
 function renderRangeReport() {
     const container = document.getElementById('reportsContent');
@@ -1702,6 +1889,105 @@ function renderRangeReport() {
     }
 }
 
+function openOrderDetail(orderId) {
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return;
+    
+    // Parse items
+    // ✅ ĐÚNG - Cách ngắn gọn
+    const items = (typeof order.items === 'string') 
+    ? JSON.parse(order.items) 
+    : (order.items || {});
+    
+    // Build items HTML
+    let itemsHtml = '';
+    let calculatedTotal = 0;
+    
+    Object.entries(items).forEach(([menuId, quantity]) => {
+        const menuItem = menuItems[menuId];
+        if (menuItem) {
+            // Chọn giá đúng theo store
+            const price = (order.store_code === 'PY' && menuItem.price_py) 
+                ? menuItem.price_py 
+                : menuItem.price;
+            
+            const itemTotal = price * quantity;
+            calculatedTotal += itemTotal;
+            
+            itemsHtml += `
+                <div class="detail-item">
+                    <span class="item-name">${menuItem.name}</span>
+                    <span class="item-qty">×${quantity}</span>
+                    <span class="item-price">${formatMoney(itemTotal)}</span>
+                </div>
+            `;
+        } else {
+            itemsHtml += `
+                <div class="detail-item">
+                    <span class="item-name" style="color: #999;">
+                        Món không xác định (${menuId})
+                    </span>
+                    <span class="item-qty">×${quantity}</span>
+                    <span class="item-price">-</span>
+                </div>
+            `;
+        }
+    });
+    
+    if (Object.keys(items).length === 0) {
+        itemsHtml = '<div style="text-align: center; color: #999; padding: 20px;">Không có món nào</div>';
+    }
+    
+    // Build order info
+    const orderTime = new Date(order.created_at).toLocaleString('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    
+    document.getElementById('detailOrderId').textContent = '#' + orderId;
+    document.getElementById('orderDetailContent').innerHTML = `
+        <div class="detail-info">
+            <div class="detail-info-row">
+                <span class="detail-info-label">🏪 Quán:</span>
+                <span class="detail-info-value">${order.store_code}</span>
+            </div>
+            <div class="detail-info-row">
+                <span class="detail-info-label">🕐 Thời gian:</span>
+                <span class="detail-info-value">${orderTime}</span>
+            </div>
+            ${order.payment_method ? `
+            <div class="detail-info-row">
+                <span class="detail-info-label">💳 Thanh toán:</span>
+                <span class="detail-info-value">${PAYMENT_METHODS[order.payment_method] || order.payment_method}</span>
+            </div>
+            ` : ''}
+            ${order.note ? `
+            <div class="detail-info-row">
+                <span class="detail-info-label">📝 Ghi chú:</span>
+                <span class="detail-info-value">${order.note}</span>
+            </div>
+            ` : ''}
+        </div>
+        
+        <div class="order-detail-items">
+            ${itemsHtml}
+        </div>
+        
+        <div class="detail-summary">
+            <span>Tổng cộng:</span>
+            <span class="total-amount">${formatMoney(order.total)}</span>
+        </div>
+    `;
+    
+    document.getElementById('orderDetailModal').classList.add('active');
+}
+
+function closeOrderDetail() {
+    document.getElementById('orderDetailModal').classList.remove('active');
+}
     </script>
 </body>
 </html>
