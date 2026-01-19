@@ -1288,46 +1288,47 @@ function openDeletedItemsDetail(orderId) {
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
     
-    // Parse deleted_items
+    // Parse deleted_items - Đây là ARRAY, không phải object
     const deletedItems = (typeof order.deleted_items === 'string') 
         ? JSON.parse(order.deleted_items) 
-        : (order.deleted_items || {});
+        : (order.deleted_items || []);
     
     // Build items HTML
     let itemsHtml = '';
     let deletedTotal = 0;
     
-    Object.entries(deletedItems).forEach(([menuId, quantity]) => {
-        const menuItem = menuItems[menuId];
-        if (menuItem) {
-            const price = (order.store_code === 'PY' && menuItem.price_py) 
-                ? menuItem.price_py 
-                : menuItem.price;
-            
-            const itemTotal = price * quantity;
-            deletedTotal += itemTotal;
-            
-            itemsHtml += `
-                <div class="detail-item">
-                    <span class="item-name">${menuItem.name}</span>
-                    <span class="item-qty">×${quantity}</span>
-                    <span class="item-price" style="color: #ef4444;">-${formatMoney(itemTotal)}</span>
-                </div>
-            `;
-        } else {
-            itemsHtml += `
-                <div class="detail-item">
-                    <span class="item-name" style="color: #999;">
-                        Món không xác định (${menuId})
-                    </span>
-                    <span class="item-qty">×${quantity}</span>
-                    <span class="item-price">-</span>
-                </div>
-            `;
-        }
+    // Loop qua array thay vì Object.entries
+    deletedItems.forEach(item => {
+        const itemTotal = item.price * item.quantity_reduced;
+        deletedTotal += itemTotal;
+        
+        const deletedTime = new Date(item.deleted_at).toLocaleTimeString('vi-VN', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
+        const reasonText = {
+            'wrong_order': '❌ Sai món',
+            'customer_cancel': '🚫 Khách hủy',
+            'out_of_stock': '📦 Hết hàng',
+            'other': '📝 Khác'
+        }[item.reason] || item.reason;
+        
+        itemsHtml += `
+            <div class="detail-item">
+                <span class="item-name">
+                    ${item.menu_name}
+                    <div style="font-size: 12px; color: #999; margin-top: 4px;">
+                        ${reasonText} • ${deletedTime}
+                    </div>
+                </span>
+                <span class="item-qty">×${item.quantity_reduced}</span>
+                <span class="item-price" style="color: #ef4444;">-${formatMoney(itemTotal)}</span>
+            </div>
+        `;
     });
     
-    if (Object.keys(deletedItems).length === 0) {
+    if (deletedItems.length === 0) {
         itemsHtml = '<div style="text-align: center; color: #999; padding: 20px;">Không có món bị xóa</div>';
     }
     
