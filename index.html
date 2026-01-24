@@ -1222,6 +1222,8 @@ async function loadMenuData() {
     `;
 }
 
+
+
 function renderOrderCard(order) {
     const isCompact = currentOrderStatus === 'paid';
     const isDeletedView = currentOrderStatus === 'deleted_items';
@@ -1270,9 +1272,10 @@ function renderOrderCard(order) {
                     `<button class="delete-btn" onclick="event.stopPropagation(); openDeleteModal(${order.id})">✕</button>` 
                     : ''}
             </div>
-            <div class="order-info">
+           <div class="order-info">
                 <span class="order-store">${order.store_code}</span>
-                <div class="order-payment">${PAYMENT_METHODS[order.payment_method] || order.payment_method}</div>
+                ${!isCompact && order.order_type ? `<div class="order-payment">${getOrderTypeLabel(order.order_type)}</div>` : ''}
+                ${order.payment_method ? `<div class="order-payment">${PAYMENT_METHODS[order.payment_method] || order.payment_method}</div>` : ''}
                 ${isCompact ? 
                     `<div class="order-amount">${formatMoney(order.total)}</div>` :
                     `<div class="order-time">🕐 ${new Date(order.created_at).toLocaleTimeString('vi-VN', {hour: '2-digit', minute: '2-digit'})}</div>
@@ -1282,6 +1285,17 @@ function renderOrderCard(order) {
             ${!isCompact ? `<div class="order-amount">${formatMoney(order.total)}</div>` : ''}
         </div>
     `;
+}
+
+const ORDER_TYPES = {
+    'dine_in': '🍽️ Ăn tại bàn',
+    'takeaway': '🥡 Mang về',
+    'grab': '🚗 Grab',
+    'shopee': '🛍️ Shopee'
+};
+
+function getOrderTypeLabel(orderType) {
+    return ORDER_TYPES[orderType] || orderType;
 }
 
 function openDeletedItemsDetail(orderId) {
